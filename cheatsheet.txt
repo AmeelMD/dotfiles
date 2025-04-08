@@ -1,0 +1,34 @@
+🧠 Terminal Productivity Cheatsheet
+
+🔍 fzf (Fuzzy Finder)
+- Ctrl+R → Search through recent command history
+- fzf → Browse files interactively
+- bat $(fzf) → Preview file with syntax highlighting
+
+🐱 bat (Better cat)
+- bat filename → Show file with syntax highlighting, line numbers
+
+📁 eza (Better ls)
+- eza -lah --icons → Detailed list with icons
+- eza -T --icons → Tree view
+- eza -lh --sort=size → Sort by file size
+
+🔎 rg (ripgrep - Better grep)
+- rg "search_term" ~/folder → Search for text inside files
+
+📊 htop (Process Manager)
+- htop → Interactive CPU/memory viewer (use arrow keys!)
+
+💾 ncdu (Disk Usage Analyzer)
+- ncdu ~ → Browse disk usage and delete large folders/files
+
+🌟 tmux (Terminal multiplexer)
+- tmux → Start a session
+- Ctrl+B then " → Horizontal split
+- Ctrl+B then % → Vertical split
+- Ctrl+B then d → Detach
+- tmux attach → Reconnect
+
+🧠 Pro Tips:
+- Use SSH config file: ~/.ssh/config for easy login (e.g., ssh myserver)
+- Use `alias` for shortcuts (add to ~/.zshrc)
