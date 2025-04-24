@@ -34,9 +34,12 @@ install_tools_linux() {
     exit 1
   fi
   
+  # Extract filename from URL
+  EZA_FILE=$(basename "$EZA_URL")
+  
   echo "⬇️ Downloading EZA from: $EZA_URL"
   curl -LO "$EZA_URL"
-  unzip -o eza_*_unknown-linux-gnu.zip
+  unzip -o "$EZA_FILE"
   mv eza /usr/local/bin/
   
   popd >/dev/null
