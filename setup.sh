@@ -19,7 +19,7 @@ install_tools_linux() {
 
   # Install eza
   TMPDIR="$(mktemp -d)"
-  pushd "$TMPDIR"
+  pushd "$TMPDIR" >/dev/null
   EZA_URL=$(curl -s https://api.github.com/repos/eza-community/eza/releases/latest \
     | grep browser_download_url \
     | grep linux-gnu.zip \
@@ -27,7 +27,7 @@ install_tools_linux() {
   curl -LO "$EZA_URL"
   unzip -o eza_*_linux-gnu.zip
   sudo mv eza /usr/local/bin/
-  popd
+  popd >/dev/null
   rm -rf "$TMPDIR"
 
   # Alias bat on Debian/Ubuntu
@@ -85,7 +85,6 @@ case "$OS" in
   Proxmox)     install_tools_proxmox ;;  
   Linux)       install_tools_linux ;;  
   *)           echo "🚫 Unsupported OS: $OS" && exit 1 ;;  
-ac
 esac
 
 setup_common
