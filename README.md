@@ -19,3 +19,7 @@ bash <(curl -sSL https://raw.githubusercontent.com/AmeelMD/dotfiles/main/setup.s
 ```
 
 Make sure your system has `curl` and `git` installed.
+
+## Credits
+
+Built with ❤️ by Ameel and GPT (Rys), 2025.
