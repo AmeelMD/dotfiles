@@ -23,24 +23,38 @@ install_tools_linux() {
   TMPDIR="$(mktemp -d)"
   pushd "$TMPDIR" >/dev/null
   
-  # Fetch EZA release zip URL for Linux
+  # Try fetching EZA binary from GitHub
   EZA_URL=$(curl -s https://api.github.com/repos/eza-community/eza/releases/latest \
   | grep browser_download_url \
   | grep 'x86_64-unknown-linux-gnu.zip' \
   | cut -d '"' -f 4)
   
   if [[ -z "$EZA_URL" ]]; then
-    echo "❌ Failed to find EZA binary download URL!"
-    exit 1
+    echo "❌ Could not find eza release URL. Falling back to apt install..."
+    apt install -y eza || echo "❌ eza install failed. Please check your sources."
+    popd >/dev/null
+    rm -rf "$TMPDIR"
+    return
   fi
   
-  # Extract filename from URL
   EZA_FILE=$(basename "$EZA_URL")
   
   echo "⬇️ Downloading EZA from: $EZA_URL"
   curl -LO "$EZA_URL"
-  unzip -o "$EZA_FILE"
-  mv eza /usr/local/bin/
+  
+  if [[ -f "$EZA_FILE" ]]; then
+    unzip -o "$EZA_FILE"
+    if [[ -f eza ]]; then
+      mv eza /usr/local/bin/
+      echo "✅ eza installed successfully to /usr/local/bin"
+    else
+      echo "⚠️ eza binary not found after unzip. Falling back to apt install..."
+      apt install -y eza || echo "❌ eza install failed. Please check your sources."
+    fi
+  else
+    echo "❌ Failed to download zip. Falling back to apt install..."
+    apt install -y eza || echo "❌ eza install failed. Please check your sources."
+  fi
   
   popd >/dev/null
   rm -rf "$TMPDIR"
