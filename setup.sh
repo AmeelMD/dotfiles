@@ -22,16 +22,26 @@ install_tools_linux() {
   # Install eza
   TMPDIR="$(mktemp -d)"
   pushd "$TMPDIR" >/dev/null
+  
+  # Fetch EZA release zip URL for Linux
   EZA_URL=$(curl -s https://api.github.com/repos/eza-community/eza/releases/latest \
-    | grep browser_download_url \
-    | grep linux-gnu.zip \
-    | cut -d '"' -f 4)
+  | grep browser_download_url \
+  | grep 'x86_64-unknown-linux-gnu.zip' \
+  | cut -d '"' -f 4)
+  
+  if [[ -z "$EZA_URL" ]]; then
+    echo "❌ Failed to find EZA binary download URL!"
+    exit 1
+  fi
+  
+  echo "⬇️ Downloading EZA from: $EZA_URL"
   curl -LO "$EZA_URL"
-  unzip -o eza_*_linux-gnu.zip
+  unzip -o eza_*_unknown-linux-gnu.zip
   mv eza /usr/local/bin/
+  
   popd >/dev/null
   rm -rf "$TMPDIR"
-
+  
   # Alias bat on Debian/Ubuntu
   grep -qxF 'alias bat="batcat"' ~/.zshrc || echo 'alias bat="batcat"' >> ~/.zshrc
 }
