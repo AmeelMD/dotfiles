@@ -2,8 +2,9 @@
 
 set -euo pipefail
 
-# Detect OS and Proxmox VE
-echo "🌍 Detecting OS..."
+# ========================
+# 🌍 OS Detection
+# ========================
 OS="$(uname -s)"
 if [ -f /etc/os-release ]; then
   . /etc/os-release
@@ -14,83 +15,97 @@ if [ -f /etc/os-release ]; then
   fi
 fi
 
-install_tools_linux() {
-  echo "📦 Installing tools for Debian/Ubuntu..."
-  apt update
-  apt install -y zsh curl unzip neofetch fzf bat ripgrep htop ncdu tmux git
+# ========================
+# 🔧 Tool Install Functions
+# ========================
+install_zsh() { sudo apt install -y zsh; }
+install_curl() { sudo apt install -y curl; }
+install_unzip() { sudo apt install -y unzip; }
+install_neofetch() { sudo apt install -y neofetch; }
+install_fzf() { sudo apt install -y fzf; }
+install_bat() { sudo apt install -y bat; }
+install_ripgrep() { sudo apt install -y ripgrep; }
+install_htop() { sudo apt install -y htop; }
+install_ncdu() { sudo apt install -y ncdu; }
+install_tmux() { sudo apt install -y tmux; }
+install_git() { sudo apt install -y git; }
 
-  # Install eza
-  TMPDIR="$(mktemp -d)"
-  pushd "$TMPDIR" >/dev/null
-  
-  # Try fetching EZA binary from GitHub
-  EZA_URL=$(curl -s https://api.github.com/repos/eza-community/eza/releases/latest \
-  | grep browser_download_url \
-  | grep 'x86_64-unknown-linux-gnu.zip' \
-  | cut -d '"' -f 4)
-  
-  if [[ -z "$EZA_URL" ]]; then
-    echo "❌ Could not find eza release URL. Falling back to apt install..."
-    apt install -y eza || echo "❌ eza install failed. Please check your sources."
-    popd >/dev/null
-    rm -rf "$TMPDIR"
+install_eza() {
+  if command -v eza &>/dev/null; then
+    echo "✅ eza is already installed."
     return
   fi
-  
+
+  echo "🔍 Installing eza..."
+  if [[ "$OS" == "Darwin" ]]; then
+    brew install eza && return
+  elif [[ "$OS" == "Linux" || "$OS" == "Proxmox" ]]; then
+    sudo apt update && sudo apt install -y eza && return
+  fi
+
+  TMPDIR="$(mktemp -d)"
+  pushd "$TMPDIR" >/dev/null
+
+  EZA_URL=$(curl -s https://api.github.com/repos/eza-community/eza/releases/latest \
+    | grep browser_download_url \
+    | grep 'x86_64-unknown-linux-gnu.zip' \
+    | cut -d '"' -f 4)
+
+  if [[ -z "$EZA_URL" ]]; then
+    echo "❌ Failed to find eza release URL."
+    popd >/dev/null
+    rm -rf "$TMPDIR"
+    return 1
+  fi
+
   EZA_FILE=$(basename "$EZA_URL")
-  
-  echo "⬇️ Downloading EZA from: $EZA_URL"
   curl -LO "$EZA_URL"
-  
+
   if [[ -f "$EZA_FILE" ]]; then
     unzip -o "$EZA_FILE"
-    if [[ -f eza ]]; then
-      mv eza /usr/local/bin/
-      echo "✅ eza installed successfully to /usr/local/bin"
-    else
-      echo "⚠️ eza binary not found after unzip. Falling back to apt install..."
-      apt install -y eza || echo "❌ eza install failed. Please check your sources."
-    fi
+    sudo mv eza /usr/local/bin/
+    echo "✅ eza installed successfully."
   else
-    echo "❌ Failed to download zip. Falling back to apt install..."
-    apt install -y eza || echo "❌ eza install failed. Please check your sources."
+    echo "❌ Failed to extract eza binary."
   fi
-  
+
   popd >/dev/null
   rm -rf "$TMPDIR"
-  
-  # Alias bat on Debian/Ubuntu
-  grep -qxF 'alias bat="batcat"' ~/.zshrc || echo 'alias bat="batcat"' >> ~/.zshrc
 }
 
-install_tools_macos() {
-  echo "🍏 Installing tools for macOS..."
-  if ! command -v brew &> /dev/null; then
-    echo "🧪 Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-  fi
-  brew update
-  brew install zsh starship fzf bat eza ripgrep neofetch htop ncdu tmux git
+# ========================
+# 📦 Tool Dispatcher
+# ========================
+install_all_tools() {
+  install_zsh
+  install_curl
+  install_unzip
+  install_neofetch
+  install_fzf
+  install_bat
+  install_ripgrep
+  install_htop
+  install_ncdu
+  install_tmux
+  install_git
+  install_eza
 }
 
-install_tools_proxmox() {
-  echo "🚀 Installing tools on Proxmox VE..."
-  install_tools_linux
-  apt install -y pve-manager pve-cluster || true
-}
-
-setup_common() {
+# ========================
+# 🔧 Dotfiles Setup
+# ========================
+setup_dotfiles() {
   echo "🔧 Applying dotfiles..."
-  DOTFILES_DIR="${HOME}/dotfiles"
+  DOTFILES_DIR="$HOME/dotfiles"
   mkdir -p "$DOTFILES_DIR"
 
-  if [ ! -f "${DOTFILES_DIR}/.zshrc" ]; then
+  if [ ! -f "$DOTFILES_DIR/.zshrc" ]; then
     git clone https://github.com/AmeelMD/dotfiles.git "$DOTFILES_DIR"
   fi
 
-  ln -sf "${DOTFILES_DIR}/.zshrc" ~/.zshrc
-  ln -sf "${DOTFILES_DIR}/.tmux.conf" ~/.tmux.conf
-  ln -sf "${DOTFILES_DIR}/cheatsheet.txt" ~/cheatsheet.txt
+  ln -sf "$DOTFILES_DIR/.zshrc" ~/.zshrc
+  ln -sf "$DOTFILES_DIR/.tmux.conf" ~/.tmux.conf
+  ln -sf "$DOTFILES_DIR/cheatsheet.txt" ~/cheatsheet.txt
 
   if ! command -v starship &> /dev/null; then
     curl -sS https://starship.rs/install.sh | sh -s -- -y
@@ -103,12 +118,9 @@ setup_common() {
   echo "✅ Dotfiles setup complete! Run 'zsh' to start the new shell."
 }
 
-# Main dispatcher
-case "$OS" in
-  Darwin)      install_tools_macos ;;
-  Proxmox)     install_tools_proxmox ;;
-  Linux)       install_tools_linux ;;
-  *)           echo "🚫 Unsupported OS: $OS" && exit 1 ;;
-esac
-
-setup_common
+# ========================
+# 🚀 Main Execution
+# ========================
+echo "🌍 OS Detected: $OS"
+install_all_tools
+setup_dotfiles
