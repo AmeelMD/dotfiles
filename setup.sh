@@ -7,15 +7,17 @@ echo "🌍 Detecting OS..."
 OS="$(uname -s)"
 if [ -f /etc/os-release ]; then
   . /etc/os-release
-  if grep -qi 'proxmox' <<< "$PRETTY_NAME"; then
+  if [[ "${PRETTY_NAME,,}" == *"proxmox"* ]]; then
     OS="Proxmox"
+  elif [[ "$ID" == "debian" || "$ID_LIKE" == *"debian"* ]]; then
+    OS="Linux"
   fi
 fi
 
 install_tools_linux() {
   echo "📦 Installing tools for Debian/Ubuntu..."
-  sudo apt update
-  sudo apt install -y zsh curl unzip neofetch fzf bat ripgrep htop ncdu tmux git
+  apt update
+  apt install -y zsh curl unzip neofetch fzf bat ripgrep htop ncdu tmux git
 
   # Install eza
   TMPDIR="$(mktemp -d)"
@@ -26,7 +28,7 @@ install_tools_linux() {
     | cut -d '"' -f 4)
   curl -LO "$EZA_URL"
   unzip -o eza_*_linux-gnu.zip
-  sudo mv eza /usr/local/bin/
+  mv eza /usr/local/bin/
   popd >/dev/null
   rm -rf "$TMPDIR"
 
@@ -46,11 +48,8 @@ install_tools_macos() {
 
 install_tools_proxmox() {
   echo "🚀 Installing tools on Proxmox VE..."
-  # Proxmox is Debian-based; reuse Debian/Ubuntu installer
   install_tools_linux
-  # Ensure Proxmox CLI tools are available
-  sudo apt update
-  sudo apt install -y pve-manager pve-cluster || true
+  apt install -y pve-manager pve-cluster || true
 }
 
 setup_common() {
@@ -62,29 +61,27 @@ setup_common() {
     git clone https://github.com/AmeelMD/dotfiles.git "$DOTFILES_DIR"
   fi
 
-  # Symlink user config files
   ln -sf "${DOTFILES_DIR}/.zshrc" ~/.zshrc
   ln -sf "${DOTFILES_DIR}/.tmux.conf" ~/.tmux.conf
   ln -sf "${DOTFILES_DIR}/cheatsheet.txt" ~/cheatsheet.txt
 
-  # Install starship prompt if missing
   if ! command -v starship &> /dev/null; then
     curl -sS https://starship.rs/install.sh | sh -s -- -y
   fi
+
   grep -qxF 'eval "$(starship init zsh)"' ~/.zshrc || echo 'eval "$(starship init zsh)"' >> ~/.zshrc
   grep -qxF 'alias cheat="bat ~/cheatsheet.txt"' ~/.zshrc || echo 'alias cheat="bat ~/cheatsheet.txt"' >> ~/.zshrc
 
-  # Change default shell
   chsh -s "$(which zsh)" || true
   echo "✅ Dotfiles setup complete! Run 'zsh' to start the new shell."
 }
 
 # Main dispatcher
 case "$OS" in
-  Darwin)      install_tools_macos ;;  
-  Proxmox)     install_tools_proxmox ;;  
-  Linux)       install_tools_linux ;;  
-  *)           echo "🚫 Unsupported OS: $OS" && exit 1 ;;  
+  Darwin)      install_tools_macos ;;
+  Proxmox)     install_tools_proxmox ;;
+  Linux)       install_tools_linux ;;
+  *)           echo "🚫 Unsupported OS: $OS" && exit 1 ;;
 esac
 
 setup_common
