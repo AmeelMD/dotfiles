@@ -12,13 +12,14 @@ if [ -f /etc/os-release ]; then
   fi
 fi
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "${SCRIPT_DIR}/install/common.sh"
+REPO_BASE="https://raw.githubusercontent.com/AmeelMD/dotfiles/main/install"
+
+source <(curl -sSL ${REPO_BASE}/common.sh)
 
 case "$OS" in
-  Darwin)  source "${SCRIPT_DIR}/install/macos.sh" && install_tools_macos ;;
-  Proxmox) source "${SCRIPT_DIR}/install/proxmox.sh" && install_tools_proxmox ;;
-  Linux)   source "${SCRIPT_DIR}/install/linux.sh" && install_tools_linux ;;
+  Darwin)  source <(curl -sSL ${REPO_BASE}/macos.sh) && install_tools_macos ;;
+  Proxmox) source <(curl -sSL ${REPO_BASE}/proxmox.sh) && install_tools_proxmox ;;
+  Linux)   source <(curl -sSL ${REPO_BASE}/linux.sh) && install_tools_linux ;;
   *)       echo "🚫 Unsupported OS: $OS" && exit 1 ;;
 esac
 
